@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!games/|thumbnails/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

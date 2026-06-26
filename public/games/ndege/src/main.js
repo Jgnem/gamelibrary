@@ -1,0 +1,2 @@
+renderUI();
+requestAnimationFrame(tick);

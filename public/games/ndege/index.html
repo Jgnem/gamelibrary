@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NDEGE - Savanna Hunt</title>
+<style>
+  :root{
+    --background:#292735;
+    --foreground:#f8f7fb;
+    --card:#343141;
+    --secondary:#433f52;
+    --muted:#aaa4b7;
+    --border:#4b4659;
+    --accent:#4d485d;
+    --gold:#c79b54;
+    --success:#2ecc40;
+    --win:#3ddc84;
+    --lose:#ff5252;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--background);color:var(--foreground);min-height:100vh;font-family:Inter,'Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:30;background:rgba(41,39,53,.95);backdrop-filter:blur(12px)}
+  .topbar{width:100%;max-width:980px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:8px 12px}
+  .logo{display:flex;align-items:center;gap:8px;min-width:0}
+  .logo h1{font-size:24px;line-height:1;font-style:italic;letter-spacing:-.02em;color:var(--gold);font-weight:900}
+  .logo span{display:none}
+  .balance{justify-self:end;font-weight:800;color:var(--success);font-size:18px;white-space:nowrap}
+  .balance small{display:none}
+  .balance::after{content:' FUN';color:var(--muted);font-weight:700}
+  .view-switch{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--border);border-radius:8px;background:rgba(67,63,82,.7)}
+  .view-switch button{min-width:76px;height:30px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:12px;font-weight:900;cursor:pointer}
+  .view-switch button:hover{color:var(--foreground)}
+  .view-switch button.active{background:var(--gold);color:#201b28}
+
+  main{width:100%;max-width:980px;margin:0 auto;padding:8px 14px 16px;display:flex;flex-direction:column;gap:10px}
+  body.view-mobile .topbar,
+  body.view-mobile main{max-width:430px}
+  body.view-mobile main{padding-inline:8px}
+  body.view-desktop .topbar,
+  body.view-desktop main{max-width:980px}
+  .history{display:flex;align-items:center;gap:12px;overflow-x:auto;border-radius:8px;padding:8px;font-size:14px;font-weight:700;scrollbar-width:none}
+  .history::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;padding:0;background:transparent;border:0;font-size:14px;font-weight:800;white-space:nowrap}
+  .chip.low{color:#38bdf8}
+  .chip.mid{color:#a78bfa}
+  .chip.high{color:#d946ef}
+  .chip.down{color:var(--success)}
+
+  .stage{position:relative;aspect-ratio:960 / 380;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#0f172a;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  canvas{display:block;width:100%;height:100%}
+  .mult{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif;font-size:72px;font-weight:900;text-shadow:0 4px 24px rgba(0,0,0,.7);pointer-events:none;transition:color .2s;z-index:2}
+  .mult.flying{color:#fff}
+  .mult.crashed{color:var(--lose)}
+  .status{position:absolute;top:50%;left:50%;transform:translateX(-50%);font-size:15px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);pointer-events:none;text-align:center;width:100%}
+  .countbar{position:absolute;bottom:0;left:0;height:5px;background:linear-gradient(90deg,#c8341f,var(--gold),var(--success));width:0%}
+
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  body.view-mobile .panels{grid-template-columns:1fr;gap:8px}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;display:grid;grid-template-columns:minmax(190px,auto) 1fr;gap:12px;align-items:stretch}
+  body.view-mobile .panel{grid-template-columns:1fr;padding:10px;gap:10px}
+  .panel h3{grid-column:1/-1;font-size:12px;letter-spacing:.02em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:-2px}
+  .row{display:flex;gap:8px;align-items:center}
+  .amt{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:0}
+  .amt button{width:28px;height:28px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--foreground);font-size:18px;line-height:1;cursor:pointer}
+  .amt button:hover{background:var(--accent)}
+  .amt input{width:96px;background:transparent;border:none;color:var(--foreground);font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif;font-size:18px;font-weight:800;text-align:center;outline:none}
+  .quick{grid-column:1;display:grid;grid-template-columns:1fr 1fr;gap:6px;align-self:end}
+  body.view-mobile .quick{grid-column:1}
+  .quick button{border-radius:999px;border:1px solid var(--border);background:transparent;color:rgba(248,247,251,.78);font-size:12px;font-weight:700;padding:4px 12px;cursor:pointer}
+  .quick button:hover{background:var(--accent)}
+
+  .aim{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--muted)}
+  body.view-mobile .aim{grid-template-columns:1fr}
+  .aim label{display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-weight:800}
+  .aim label.right{margin-left:auto}
+  body.view-mobile .aim label.right{margin-left:0}
+  .aim input[type="checkbox"]{accent-color:var(--gold)}
+  .aim .target{display:flex;align-items:center;justify-content:flex-end;gap:4px;background:transparent;border:0;padding:0}
+  .aim .target input{width:52px;background:transparent;border:none;color:var(--foreground);font-size:12px;font-weight:800;text-align:right;outline:none}
+  .aim .target input:disabled{opacity:.35}
+  .aim .target span{color:var(--muted);font-weight:800}
+  .aim .odds{display:none}
+
+  .action{grid-column:2;grid-row:2 / span 2;min-height:110px;border:none;border-radius:6px;font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:0;cursor:pointer;color:#fff;transition:filter .15s;text-transform:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;box-shadow:0 10px 20px rgba(0,0,0,.22)}
+  body.view-mobile .action{grid-column:1;grid-row:auto;min-height:72px}
+  .action:active{filter:brightness(.85)}
+  .action.bet{background:var(--success)}
+  .action.cancel{background:#5a536f}
+  .action.shoot{background:linear-gradient(135deg,#ff8c2e,#c8341f);animation:pulse 1s infinite}
+  .action.done{background:var(--secondary);color:var(--win);border:1px solid var(--win)}
+  .action:disabled{cursor:not-allowed;animation:none}
+  .action.bet:disabled,.action.cancel:disabled{opacity:.45}
+  @keyframes pulse{50%{filter:brightness(1.2)}}
+  .sub{font-size:15px;font-weight:700;display:block;opacity:.9;text-transform:none}
+
+  .mult.pop{animation:mpop .35s ease}
+  @keyframes mpop{30%{transform:translate(-50%,-50%) scale(1.28)}100%{transform:translate(-50%,-50%) scale(1)}}
+  .bigwin{position:absolute;top:16%;left:50%;transform:translate(-50%,-50%) scale(.6);font-size:38px;font-weight:900;color:var(--gold);letter-spacing:2px;text-shadow:0 0 26px rgba(242,183,5,.85);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+  .bigwin.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 45%, rgba(255,240,190,.85), rgba(255,190,60,.25) 45%, transparent 75%);transition:opacity .3s}
+  .flash.show{opacity:.75;transition:opacity .04s}
+  .flash.show-big{opacity:1;transition:opacity .04s}
+  .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--win);color:var(--win);padding:10px 22px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99}
+  .toast.show{opacity:1}
+  footer{font-size:11px;color:var(--muted);text-align:center;padding:0 14px 20px;max-width:760px;margin:0 auto}
+
+  @media(max-width:760px){
+    .topbar{grid-template-columns:auto 1fr;padding-inline:8px;gap:8px}
+    .view-switch{grid-column:1/-1;justify-self:stretch}
+    .view-switch button{flex:1}
+    .panel{grid-template-columns:1fr}
+    .action{grid-column:1;grid-row:auto;min-height:72px}
+    .quick{grid-column:1}
+    .aim{grid-template-columns:1fr}
+    .aim label.right{margin-left:0}
+    .balance{font-size:15px}
+    .mult{font-size:clamp(40px,16vw,72px)}
+    .status{font-size:12px;letter-spacing:2px}
+    .bigwin{font-size:clamp(24px,8vw,38px)}
+  }
+
+  @media(max-width:430px){
+    main{padding-inline:8px}
+    .panels{grid-template-columns:1fr;gap:8px}
+    .panel{padding:10px;gap:10px}
+    .logo h1{font-size:22px}
+    .balance{font-size:14px}
+    .quick button{min-height:30px}
+    .aim label{min-height:42px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="logo"><h1>NDEGE</h1><span>Savanna Hunt Â· Demo</span></div>
+    <div class="balance"><small>Balance</small><span id="balance">10,000.00</span></div>
+    <div class="view-switch" aria-label="View mode">
+      <button type="button" data-view="desktop">Desktop</button>
+      <button type="button" data-view="mobile">Mobil</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="history" id="history"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="960" height="380"></canvas>
+    <div class="mult" id="mult"></div>
+    <div class="status" id="status">LOAD YOUR BARRELS</div>
+    <div class="countbar" id="countbar"></div>
+    <div class="bigwin" id="bigwin"></div>
+    <div class="flash" id="flash"></div>
+  </div>
+
+  <div class="panels" id="panels"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+<footer>Demo prototype Â· fake money Â· A shot aimed at multiplier m hits with probability 0.94 / m and pays m x stake -> theoretical RTP 94% for every target. 6% of birds escape instantly at 1.00x. "Shoot now" fires at the live multiplier with identical odds. The bird comes down when every loaded barrel connects - one bet needs one hit, two bets need two. The round then ends early with all payouts already locked, so pacing changes but RTP does not.</footer>
+
+  <script>
+    (() => {
+      const key = 'ndege-view-mode';
+      const buttons = Array.from(document.querySelectorAll('[data-view]'));
+      const preferMobile = window.matchMedia('(max-width: 760px)').matches;
+      const saved = (() => {
+        try { return localStorage.getItem(key); }
+        catch (error) { return null; }
+      })();
+      const initial = saved || (preferMobile ? 'mobile' : 'desktop');
+
+      function setViewMode(mode){
+        const next = mode === 'mobile' ? 'mobile' : 'desktop';
+        document.body.classList.toggle('view-mobile', next === 'mobile');
+        document.body.classList.toggle('view-desktop', next === 'desktop');
+        buttons.forEach(button => {
+          const active = button.dataset.view === next;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        try { localStorage.setItem(key, next); }
+        catch (error) {}
+      }
+
+      buttons.forEach(button => {
+        button.addEventListener('click', () => setViewMode(button.dataset.view));
+      });
+      setViewMode(initial);
+    })();
+  </script>
+  <script src="./src/dom.js"></script>
+  <script src="./src/math.js"></script>
+  <script src="./src/config.js"></script>
+  <script src="./src/state.js"></script>
+  <script src="./src/game/betting.js"></script>
+  <script src="./src/game/shooting.js"></script>
+  <script src="./src/ui.js"></script>
+  <script src="./src/game/round.js"></script>
+  <script src="./src/render/background.js"></script>
+  <script src="./src/render/visual-flight.js"></script>
+  <script src="./src/render/bird.js"></script>
+  <script src="./src/render/hunter.js"></script>
+  <script src="./src/render/smoke.js"></script>
+  <script src="./src/render/effects.js"></script>
+  <script src="./src/render/renderer.js"></script>
+  <script src="./src/main.js"></script>
+</body>
+</html>

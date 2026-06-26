@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0b0b0b; }
+  </style>
+</helmet>
+
+<div style="font-family: 'Outfit', system-ui, sans-serif; background: #0b0b0b; min-height: 100vh; color: #f0f0f0; -webkit-font-smoothing: antialiased;">
+
+  <!-- ══════════ HOME ══════════ -->
+  <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 60px 24px 80px;">
+
+      <header style="margin-bottom: 52px;">
+        <h1 style="font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px;">{{ siteTitle }}</h1>
+        <p style="color: #888; font-size: 1rem;">{{ subtitle }}</p>
+      </header>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <sc-for list="{{ games }}" as="game" hint-placeholder-count="3">
+          <article style="background: #181818; border: 1px solid #282828; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.15s ease, transform 0.15s ease; cursor: default;" style-hover="border-color: #383838; transform: translateY(-2px);">
+            <div style="aspect-ratio: 16/9; overflow: hidden; flex-shrink: 0; background: repeating-linear-gradient(135deg, #0f0f0f 0px, #0f0f0f 8px, #141414 8px, #141414 16px); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 0.7rem; color: #252525; font-family: monospace;">{{ game.slug }}.png</span>
+            </div>
+            <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+              <h2 style="font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;">{{ game.title }}</h2>
+              <p style="font-size: 0.875rem; color: #888; line-height: 1.55; flex: 1;">{{ game.description }}</p>
+              <div style="margin-top: 12px;">
+                <button style="background: #7c6af7; color: white; padding: 9px 20px; border-radius: 7px; font-size: 0.875rem; font-weight: 600; font-family: inherit; border: none; cursor: pointer; transition: background 0.15s;" style-hover="background: #9483f8;" onClick="{{ game.onPlay }}">Play</button>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <footer style="margin-top: 80px; padding-top: 24px; border-top: 1px solid #282828; text-align: center;">
+        <button style="font-size: 0.8rem; color: #888; background: none; border: none; cursor: pointer; font-family: inherit; transition: color 0.15s;" style-hover="color: #f0f0f0;" onClick="{{ goAdmin }}">How to add a game</button>
+      </footer>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ PLAY PAGE ══════════ -->
+  <sc-if value="{{ showPlay }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; height: 100vh; overflow: hidden;">
+
+      <div style="display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid #282828; background: #0b0b0b; flex-shrink: 0; min-height: 52px;">
+        <button style="font-size: 0.875rem; color: #888; background: none; border: none; cursor: pointer; font-family: inherit; white-space: nowrap; transition: color 0.15s;" style-hover="color: #f0f0f0;" onClick="{{ goHome }}">← Library</button>
+        <span style="font-size: 1rem; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ currentGame.title }}</span>
+        <button style="background: none; border: 1px solid #282828; color: #888; padding: 5px 14px; border-radius: 6px; font-size: 0.8rem; font-family: inherit; cursor: pointer; white-space: nowrap; transition: color 0.15s, border-color 0.15s;" style-hover="color: #f0f0f0; border-color: #383838;">Fullscreen</button>
+      </div>
+
+      <div style="flex: 1; background: #060606; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+        <div style="font-family: monospace; font-size: 0.75rem; color: #2a2a2a; text-align: center; line-height: 2;">
+          <div style="color: #333; margin-bottom: 4px;">[ iframe ]</div>
+          <div>/games/{{ currentGame.slug }}/index.html</div>
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- ══════════ ADMIN ══════════ -->
+  <sc-if value="{{ showAdmin }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 740px; margin: 0 auto; padding: 60px 24px 80px; display: flex; flex-direction: column; gap: 40px;">
+
+      <button style="font-size: 0.875rem; color: #888; background: none; border: none; cursor: pointer; font-family: inherit; align-self: flex-start; display: flex; align-items: center; gap: 4px; transition: color 0.15s;" style-hover="color: #f0f0f0;" onClick="{{ goHome }}">← Library</button>
+
+      <div>
+        <h1 style="font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px;">Adding a New Game</h1>
+        <p style="color: #888; font-size: 0.95rem; line-height: 1.65;">No backend or admin panel. Add files to the repo and push — Vercel redeploys automatically.</p>
+      </div>
+
+      <div>
+        <div style="font-size: 0.7rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Steps</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">1</span><span>Add the game folder to <code style="background: #1c1c1c; color: #e0e0e0; padding: 2px 6px; border-radius: 4px; font-size: 0.82em; font-family: monospace; border: 1px solid #282828;">public/games/[slug]/</code></span></div>
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">2</span><span>Make sure the game has <code style="background: #1c1c1c; color: #e0e0e0; padding: 2px 6px; border-radius: 4px; font-size: 0.82em; font-family: monospace; border: 1px solid #282828;">index.html</code> in that folder</span></div>
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">3</span><span>Add a thumbnail to <code style="background: #1c1c1c; color: #e0e0e0; padding: 2px 6px; border-radius: 4px; font-size: 0.82em; font-family: monospace; border: 1px solid #282828;">public/thumbnails/[slug].png</code></span></div>
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">4</span><span>Add the game entry to <code style="background: #1c1c1c; color: #e0e0e0; padding: 2px 6px; border-radius: 4px; font-size: 0.82em; font-family: monospace; border: 1px solid #282828;">src/data/games.ts</code></span></div>
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">5</span><span>Commit and push to GitHub</span></div>
+          <div style="display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; color: #ccc; line-height: 1.5;"><span style="width: 24px; height: 24px; min-width: 24px; background: #1e1a35; color: #7c6af7; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin-top: 1px;">6</span><span>Vercel will redeploy automatically</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size: 0.7rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Folder structure</div>
+        <pre style="background: #181818; border: 1px solid #282828; border-radius: 10px; padding: 20px 24px; font-size: 0.85rem; font-family: monospace; color: #888; overflow-x: auto; line-height: 1.75;">public/
+├── games/
+│   └── my-game/
+│       ├── index.html
+│       ├── game.js
+│       ├── style.css
+│       └── assets/
+└── thumbnails/
+    └── my-game.png</pre>
+      </div>
+
+      <div>
+        <div style="font-size: 0.7rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Example entry in games.ts</div>
+        <pre style="background: #181818; border: 1px solid #282828; border-radius: 10px; padding: 20px 24px; font-size: 0.85rem; font-family: monospace; color: #888; overflow-x: auto; line-height: 1.75;">{
+  title: "My Game",
+  slug: "my-game",
+  description: "A short description of the game.",
+  thumbnail: "/thumbnails/my-game.png",
+  url: "/games/my-game/index.html",
+},</pre>
+      </div>
+
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1280, &quot;height&quot;: 820 },
+  &quot;siteTitle&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Game Library&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;subtitle&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;A small collection of browser games&quot;, &quot;tsType&quot;: &quot;string&quot; }
+}">
+class Component extends DCLogic {
+  state = {
+    page: 'home',
+    currentSlug: 'ndege',
+  }
+
+  renderVals() {
+    const { page, currentSlug } = this.state
+
+    const sampleGames = [
+      {
+        title: 'Ndege',
+        slug: 'ndege',
+        description: 'A fast HTML5 savanna bird game.',
+      },
+      {
+        title: 'Desert Run',
+        slug: 'desert-run',
+        description: 'Dodge obstacles across a scorching desert. How far can you go?',
+      },
+      {
+        title: 'Pixel Tower',
+        slug: 'pixel-tower',
+        description: 'Stack blocks and build the tallest tower you can.',
+      },
+    ]
+
+    const games = sampleGames.map((g) => ({
+      ...g,
+      onPlay: () => this.setState({ page: 'play', currentSlug: g.slug }),
+    }))
+
+    const currentGame =
+      sampleGames.find((g) => g.slug === currentSlug) || sampleGames[0]
+
+    return {
+      siteTitle: this.props.siteTitle ?? 'Game Library',
+      subtitle: this.props.subtitle ?? 'A small collection of browser games',
+      showHome: page === 'home',
+      showPlay: page === 'play',
+      showAdmin: page === 'admin',
+      games,
+      currentGame,
+      goHome: () => this.setState({ page: 'home' }),
+      goAdmin: () => this.setState({ page: 'admin' }),
+    }
+  }
+}
+</script>
+</body>
+</html>
