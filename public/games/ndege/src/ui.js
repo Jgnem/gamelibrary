@@ -5,8 +5,9 @@ function renderUI(){
     b.disabled = false;
     if (p.state === 'idle'){
       b.className = 'action bet';
+      const amount = fmtBetButtonAmount(p.el.amt.value);
       b.innerHTML = (phase === 'flying' || phase === 'launching')
-        ? 'Bet <span class="sub">next flight</span>' : 'Place bet';
+        ? `Bet ${amount} FUN <span class="sub">next flight</span>` : `Bet ${amount} FUN`;
       p.el.info.textContent = '';
     } else if (p.state === 'placed'){
       b.className = 'action cancel'; b.textContent = 'Cancel';
@@ -35,6 +36,11 @@ function renderUI(){
       p.el.info.textContent = '';
     }
   }
+}
+
+function fmtBetButtonAmount(value){
+  const amount = Math.max(10, +value || 0);
+  return amount.toLocaleString('en-US', {maximumFractionDigits: 0});
 }
 
 /* =====================  BIG WIN BANNER  ===================== */

@@ -36,8 +36,13 @@ function makePanel(n){
 
   div.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
     p.el.amt.value = Math.max(10, (+p.el.amt.value||0) + (+b.dataset.d)*10);
+    renderUI();
   });
-  div.querySelectorAll('[data-q]').forEach(b => b.onclick = () => p.el.amt.value = b.dataset.q);
+  div.querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+    p.el.amt.value = b.dataset.q;
+    renderUI();
+  });
+  p.el.amt.oninput = () => renderUI();
   p.el.target.onchange = () => {
     p.target = Math.max(1.01, +p.el.target.value || 2);
     p.el.target.value = p.target.toFixed(2);
