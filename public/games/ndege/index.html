@@ -28,10 +28,13 @@
   .balance{justify-self:end;font-weight:800;color:var(--success);font-size:18px;white-space:nowrap}
   .balance small{display:none}
   .balance::after{content:' FUN';color:var(--muted);font-weight:700}
-  .view-switch{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--border);border-radius:8px;background:rgba(67,63,82,.7)}
-  .view-switch button{min-width:76px;height:30px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:12px;font-weight:900;cursor:pointer}
+  .view-switch{position:relative;display:flex;align-items:center;gap:2px;width:76px;height:32px;padding:3px;border:1px solid var(--border);border-radius:999px;background:rgba(67,63,82,.7);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .view-switch::before{content:'';position:absolute;top:3px;left:3px;width:34px;height:24px;border-radius:999px;background:var(--gold);transition:transform .18s ease;box-shadow:0 4px 10px rgba(0,0,0,.28)}
+  body.view-mobile .view-switch::before{transform:translateX(34px)}
+  .view-switch button{position:relative;z-index:1;width:34px;height:24px;border:0;border-radius:999px;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
   .view-switch button:hover{color:var(--foreground)}
-  .view-switch button.active{background:var(--gold);color:#201b28}
+  .view-switch button.active{color:#201b28}
+  .view-switch svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
   main{width:100%;max-width:1180px;margin:0 auto;padding:8px 14px 16px;display:flex;flex-direction:column;gap:10px}
   body.view-mobile .topbar,
@@ -48,7 +51,12 @@
   .chip.down{color:var(--success)}
 
   .stage{position:relative;aspect-ratio:960 / 380;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#0f172a;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
-  body.view-mobile .stage{aspect-ratio:720 / 520}
+  body.view-mobile .stage{
+    aspect-ratio:720 / 520;
+    width:min(100%, calc(34svh * 720 / 520));
+    max-width:100%;
+    margin-inline:auto;
+  }
   canvas{display:block;width:100%;height:100%}
   .mult{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif;font-size:72px;font-weight:900;text-shadow:0 4px 24px rgba(0,0,0,.7);pointer-events:none;transition:color .2s;z-index:2}
   .mult.flying{color:#fff}
@@ -107,10 +115,8 @@
   footer{font-size:11px;color:var(--muted);text-align:center;padding:0 14px 20px;max-width:760px;margin:0 auto}
 
   @media(max-width:768px){
-    .topbar{grid-template-columns:auto 1fr;padding-inline:8px;gap:8px}
-    .view-switch{grid-column:1/-1;justify-self:stretch}
-    .view-switch button{flex:1}
-    body.view-mobile .panels{gap:6px}
+    .topbar{grid-template-columns:auto 1fr auto;padding:6px 8px;gap:8px}
+    body.view-mobile .panels{gap:5px}
     body.view-mobile .panel{
       grid-template-columns:minmax(0,1fr) minmax(118px,34%);
       grid-template-areas:
@@ -118,32 +124,34 @@
         "amount action"
         "quick action"
         "aim aim";
-      gap:6px 8px;
-      padding:10px;
+      gap:4px 7px;
+      padding:7px 8px;
       border-radius:8px;
       align-items:stretch;
       min-height:0;
+      max-height:134px;
+      overflow:hidden;
     }
     body.view-mobile .panel h3{
       grid-area:head;
       align-items:center;
-      min-height:16px;
+      min-height:14px;
       font-size:11px;
       line-height:1;
       margin:0;
     }
     body.view-mobile .panel > .row{grid-area:amount;min-width:0}
-    body.view-mobile .amt{justify-content:flex-start;gap:6px;min-height:34px}
+    body.view-mobile .amt{justify-content:flex-start;gap:5px;min-height:30px}
     body.view-mobile .amt button{
-      width:30px;
-      height:30px;
-      flex:0 0 30px;
-      font-size:17px;
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+      font-size:16px;
       background:var(--secondary);
     }
     body.view-mobile .amt input{
-      width:min(86px,100%);
-      font-size:17px;
+      width:min(78px,100%);
+      font-size:16px;
       text-align:center;
     }
     body.view-mobile .quick{
@@ -154,8 +162,8 @@
     }
     body.view-mobile .quick button{
       min-width:0;
-      min-height:26px;
-      padding:3px 4px;
+      min-height:23px;
+      padding:2px 4px;
       font-size:11px;
       line-height:1;
       border-radius:999px;
@@ -165,30 +173,30 @@
       grid-area:aim;
       grid-template-columns:auto minmax(48px,auto) auto;
       align-items:center;
-      gap:5px;
-      padding-top:6px;
+      gap:4px;
+      padding-top:4px;
       border-top:1px solid rgba(75,70,89,.75);
-      font-size:11px;
+      font-size:10px;
       min-width:0;
     }
     body.view-mobile .aim label{
-      min-height:28px;
-      padding:5px 7px;
-      gap:5px;
+      min-height:23px;
+      padding:3px 6px;
+      gap:4px;
       border-radius:999px;
       overflow:hidden;
       text-overflow:ellipsis;
     }
     body.view-mobile .aim label.right{margin-left:0}
     body.view-mobile .aim .target{justify-content:center}
-    body.view-mobile .aim .target input{width:42px;font-size:11px}
+    body.view-mobile .aim .target input{width:38px;font-size:10px}
     body.view-mobile .action{
       grid-area:action;
       grid-column:auto;
       grid-row:auto;
-      min-height:76px;
+      min-height:64px;
       width:100%;
-      padding:8px;
+      padding:7px;
       border-radius:7px;
       font-size:clamp(16px,4.7vw,20px);
       line-height:1.05;
@@ -206,15 +214,19 @@
 
   @media(max-width:430px){
     main{padding-inline:8px}
-    .panels{grid-template-columns:1fr;gap:6px}
-    body.view-mobile .panel{padding:8px;gap:5px 6px}
+    body.view-mobile main{gap:6px}
+    body.view-mobile .history{padding-block:4px;font-size:12px}
+    body.view-mobile .stage{width:min(100%, calc(30svh * 720 / 520))}
+    .panels{grid-template-columns:1fr;gap:5px}
+    body.view-mobile .panel{padding:6px 7px;gap:4px 6px;max-height:126px}
     .logo h1{font-size:22px}
     .balance{font-size:14px}
-    body.view-mobile .quick button{min-height:24px;font-size:10px}
-    body.view-mobile .aim label{min-height:26px}
+    body.view-mobile .quick button{min-height:22px;font-size:10px}
+    body.view-mobile .aim label{min-height:22px}
   }
 
-  @media(max-width:360px){
+  @media(max-width:330px){
+    body.view-mobile .stage{width:min(100%, calc(27svh * 720 / 520))}
     body.view-mobile .panel{
       grid-template-columns:1fr;
       grid-template-areas:
@@ -224,7 +236,7 @@
         "action"
         "aim";
     }
-    body.view-mobile .action{min-height:54px}
+    body.view-mobile .action{min-height:48px}
     body.view-mobile .aim{grid-template-columns:1fr auto}
     body.view-mobile .aim label.right{grid-column:1/-1}
   }
@@ -236,8 +248,12 @@
     <div class="logo"><h1>NDEGE</h1><span>Savanna Hunt Â· Demo</span></div>
     <div class="balance"><small>Balance</small><span id="balance">10,000.00</span></div>
     <div class="view-switch" aria-label="View mode">
-      <button type="button" data-view="desktop">Desktop</button>
-      <button type="button" data-view="mobile">Mobil</button>
+      <button type="button" data-view="desktop" aria-label="Desktop view" title="Desktop">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8"></path><path d="M12 16v4"></path></svg>
+      </button>
+      <button type="button" data-view="mobile" aria-label="Mobile view" title="Mobil">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+      </button>
     </div>
   </div>
 </header>

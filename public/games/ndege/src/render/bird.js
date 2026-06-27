@@ -646,10 +646,10 @@ function drawCurrentBird(c, now, visual){
   }
 }
 
-// FOMO ghost-continuation timeline (seconds): climb, hold, fade.
-const GHOST_CLIMB_S = 1.9;
-const GHOST_HOLD_S = 0.7;
-const GHOST_FADE_S = 0.6;
+// FOMO ghost-continuation timeline (seconds): a slow, certain climb.
+const GHOST_CLIMB_S = 2.0;
+const GHOST_HOLD_S = 1.0;
+const GHOST_FADE_S = 0;
 const GHOST_TOTAL_S = GHOST_CLIMB_S + GHOST_HOLD_S + GHOST_FADE_S;
 
 /* The FOMO ghost is ONE single Bézier from the cliff origin O to B_ghost, built
@@ -690,9 +690,7 @@ function ghostGeometry(now, field, O, B){
   const tFinal = clamp(0.66 - 0.45 * extra, 0.30, 0.72);   // smaller => longer climb
 
   const climb = smoothstep(0, GHOST_CLIMB_S, age);          // eased 0..1
-  const fade = age <= GHOST_CLIMB_S + GHOST_HOLD_S
-    ? 1
-    : Math.max(0, 1 - (age - GHOST_CLIMB_S - GHOST_HOLD_S) / GHOST_FADE_S);
+  const fade = age <= GHOST_CLIMB_S + GHOST_HOLD_S ? 1 : 0;
   const tSplit = 1 - (1 - tFinal) * climb;                  // 1 at freeze -> tFinal
 
   // B_ghost so the curve passes through the frozen tip B exactly at tSplit.
@@ -709,12 +707,9 @@ function ghostGeometry(now, field, O, B){
   const A = lerp(O, P1, tSplit), Bc = lerp(P1, P2, tSplit), C = lerp(P2, Bghost, tSplit);
   const D = lerp(A, Bc, tSplit), E = lerp(Bc, C, tSplit), F = lerp(D, E, tSplit);
 
-  // Sprite/label ride the blue tip, clamped on-screen (the curve may climb off
-  // the top for big would-haves; the bird then hovers at the upper edge).
-  const tip = {
-    x: clamp(Bghost.x, field.x, field.x + CURVE.maxX * field.w),
-    y: clamp(Bghost.y, CURVE.minYtop * field.h, field.y + field.h)
-  };
+  // Sprite/label ride the real blue tip in world space. The camera follows it
+  // during downed rounds, so do not clamp it to the screen edge.
+  const tip = {x: Bghost.x, y: Bghost.y};
   return {red: [O, A, D, F], blue: [F, E, C, Bghost], tip, fade, reach};
 }
 
@@ -802,9 +797,7 @@ function drawGhostBlue(c, now, gm){
   c.strokeStyle = 'rgba(16,28,52,0.85)';
   c.fillStyle = 'rgba(205,228,255,0.98)';
   const label = `WOULD HAVE REACHED ${gm.reach.toFixed(2)}x`;
-  const lx = Math.max(96, Math.min(W - 96, tip.x));
-  const ly = Math.max(24, tip.y - 22);
-  c.strokeText(label, lx, ly);
-  c.fillText(label, lx, ly);
+  c.strokeText(label, tip.x, tip.y - 22);
+  c.fillText(label, tip.x, tip.y - 22);
   c.restore();
 }

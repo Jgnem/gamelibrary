@@ -1,4 +1,16 @@
 /* ---- main draw ---- */
+function downedGhostCamera(gm, now){
+  if (!gm || phase !== 'downed') return {x: 0, y: 0};
+  const age = (now - ghostFomo.start) / 1000;
+  const pan = smoothstep(0.08, GHOST_CLIMB_S, age);
+  const targetX = W * 0.58;
+  const targetY = H * 0.28;
+  return {
+    x: clamp((targetX - gm.tip.x) * pan, -W * 0.42, W * 0.18),
+    y: clamp((targetY - gm.tip.y) * pan, 0, H * 0.62)
+  };
+}
+
 function draw(now){
   const dt = Math.min(0.05, (now - lastNow)/1000);
   lastNow = now;
@@ -22,9 +34,8 @@ function draw(now){
   ctx.scale(sceneZoom, sceneZoom);
   ctx.translate(-W / 2, -H / 2);
 
-  drawSceneBackground(ctx, now);
-
   if (phase === 'intro'){
+    drawSceneBackground(ctx, now);
     // Bird descends from just above the hunter's head down onto its hover spot.
     // easeInOutCubic gives a gentle accelerate-then-settle drop (no snappy dash),
     // and it lands exactly on the resting pose so the handoff to 'waiting' is
@@ -43,6 +54,7 @@ function draw(now){
   }
 
   if (phase === 'waiting'){
+    drawSceneBackground(ctx, now);
     drawHunterAndGun(
       ctx,
       HUNTER_IDLE_AIM,
@@ -55,6 +67,7 @@ function draw(now){
   }
 
   if (phase === 'launching'){
+    drawSceneBackground(ctx, now);
     const pose = getTakeoffBirdPose(now);
     lastTip = {x: pose.x, y: pose.y};
 
@@ -116,12 +129,47 @@ function draw(now){
   // De Casteljau: red part below the split, blue continuation above. Built once
   // here; red drawn now (under the bird), blue on top after drawCurrentBird.
   let ghost = null;
+  if (phase === 'downed' && ghostFomo){
+    ghost = ghostGeometry(now, field, O, pathTip);
+  }
+  const ghostCamera = downedGhostCamera(ghost, now);
+  if (phase === 'downed' && (ghostCamera.x || ghostCamera.y)){
+    drawSky(ctx, W, H);
+  }
+
+  if (phase === 'downed'){
+    ctx.save();
+    ctx.translate(ghostCamera.x, ghostCamera.y);
+    drawSceneBackground(ctx, now);
+    if (ghost){
+      drawGhostRed(ctx, ghost);          // red part of the single split curve
+    } else {
+      drawCurve(ctx, O, pathTip, '#ff5a2f');
+    }
+    drawCurrentBird(ctx, now, {
+      angle: pose.angle,
+      visualIntensity,
+      pathHitPoint: downPos,
+      pathTip,
+      sceneZoom
+    });
+    if (ghost){
+      drawGhostBlue(ctx, now, ghost);
+    }
+    drawVisualEffects(ctx, dt);
+    ctx.restore();
+    drawHunterAndGun(ctx, HUNTER_IDLE_AIM, 0);
+    ctx.restore();
+    return;
+  }
+
+  drawSceneBackground(ctx, now);
+
   if (phase === 'flying'){
     lastTip = {x: pathTip.x, y: pathTip.y};
     lastVisualPathProgress = visualProgressAt(flightElapsed);
     drawCurve(ctx, O, pathTip, '#ffb347');
   } else {
-    ghost = (phase === 'downed' && ghostFomo) ? ghostGeometry(now, field, O, pathTip) : null;
     if (ghost){
       drawGhostRed(ctx, ghost);          // red part of the single split curve
     } else {
