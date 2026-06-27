@@ -106,15 +106,98 @@
   .toast.show{opacity:1}
   footer{font-size:11px;color:var(--muted);text-align:center;padding:0 14px 20px;max-width:760px;margin:0 auto}
 
-  @media(max-width:760px){
+  @media(max-width:768px){
     .topbar{grid-template-columns:auto 1fr;padding-inline:8px;gap:8px}
     .view-switch{grid-column:1/-1;justify-self:stretch}
     .view-switch button{flex:1}
-    .panel{grid-template-columns:1fr}
-    .action{grid-column:1;grid-row:auto;min-height:72px}
-    .quick{grid-column:1}
-    .aim{grid-template-columns:1fr}
-    .aim label.right{margin-left:0}
+    body.view-mobile .panels{gap:6px}
+    body.view-mobile .panel{
+      grid-template-columns:minmax(0,1fr) minmax(118px,34%);
+      grid-template-areas:
+        "head head"
+        "amount action"
+        "quick action"
+        "aim aim";
+      gap:6px 8px;
+      padding:10px;
+      border-radius:8px;
+      align-items:stretch;
+      min-height:0;
+    }
+    body.view-mobile .panel h3{
+      grid-area:head;
+      align-items:center;
+      min-height:16px;
+      font-size:11px;
+      line-height:1;
+      margin:0;
+    }
+    body.view-mobile .panel > .row{grid-area:amount;min-width:0}
+    body.view-mobile .amt{justify-content:flex-start;gap:6px;min-height:34px}
+    body.view-mobile .amt button{
+      width:30px;
+      height:30px;
+      flex:0 0 30px;
+      font-size:17px;
+      background:var(--secondary);
+    }
+    body.view-mobile .amt input{
+      width:min(86px,100%);
+      font-size:17px;
+      text-align:center;
+    }
+    body.view-mobile .quick{
+      grid-area:quick;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:4px;
+      align-self:stretch;
+    }
+    body.view-mobile .quick button{
+      min-width:0;
+      min-height:26px;
+      padding:3px 4px;
+      font-size:11px;
+      line-height:1;
+      border-radius:999px;
+      background:rgba(67,63,82,.65);
+    }
+    body.view-mobile .aim{
+      grid-area:aim;
+      grid-template-columns:auto minmax(48px,auto) auto;
+      align-items:center;
+      gap:5px;
+      padding-top:6px;
+      border-top:1px solid rgba(75,70,89,.75);
+      font-size:11px;
+      min-width:0;
+    }
+    body.view-mobile .aim label{
+      min-height:28px;
+      padding:5px 7px;
+      gap:5px;
+      border-radius:999px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.view-mobile .aim label.right{margin-left:0}
+    body.view-mobile .aim .target{justify-content:center}
+    body.view-mobile .aim .target input{width:42px;font-size:11px}
+    body.view-mobile .action{
+      grid-area:action;
+      grid-column:auto;
+      grid-row:auto;
+      min-height:76px;
+      width:100%;
+      padding:8px;
+      border-radius:7px;
+      font-size:clamp(16px,4.7vw,20px);
+      line-height:1.05;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      text-align:center;
+    }
     .balance{font-size:15px}
     .mult{font-size:clamp(40px,16vw,72px)}
     .status{font-size:12px;letter-spacing:2px}
@@ -123,12 +206,27 @@
 
   @media(max-width:430px){
     main{padding-inline:8px}
-    .panels{grid-template-columns:1fr;gap:8px}
-    .panel{padding:10px;gap:10px}
+    .panels{grid-template-columns:1fr;gap:6px}
+    body.view-mobile .panel{padding:8px;gap:5px 6px}
     .logo h1{font-size:22px}
     .balance{font-size:14px}
-    .quick button{min-height:30px}
-    .aim label{min-height:42px}
+    body.view-mobile .quick button{min-height:24px;font-size:10px}
+    body.view-mobile .aim label{min-height:26px}
+  }
+
+  @media(max-width:360px){
+    body.view-mobile .panel{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "head"
+        "amount"
+        "quick"
+        "action"
+        "aim";
+    }
+    body.view-mobile .action{min-height:54px}
+    body.view-mobile .aim{grid-template-columns:1fr auto}
+    body.view-mobile .aim label.right{grid-column:1/-1}
   }
 </style>
 </head>
