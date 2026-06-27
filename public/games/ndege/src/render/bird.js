@@ -687,7 +687,7 @@ function ghostGeometry(now, field, O, B){
   const reach = ghostFomo.reach;
   const fromMult = Math.max(1.0001, ghostFomo.fromMult || 1);
   const extra = clamp(Math.log(Math.max(1, reach) / fromMult) / Math.log(20), 0, 1);
-  const tFinal = clamp(0.66 - 0.45 * extra, 0.30, 0.72);   // smaller => longer climb
+  const tFinal = clamp(0.40 - 0.18 * extra, 0.22, 0.42);   // smaller => higher sky climb
 
   const climb = smoothstep(0, GHOST_CLIMB_S, age);          // eased 0..1
   const fade = age <= GHOST_CLIMB_S + GHOST_HOLD_S ? 1 : 0;
