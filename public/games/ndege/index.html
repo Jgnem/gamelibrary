@@ -21,7 +21,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--background);color:var(--foreground);min-height:100vh;font-family:Inter,'Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   header{position:sticky;top:0;z-index:30;background:rgba(41,39,53,.95);backdrop-filter:blur(12px)}
-  .topbar{width:100%;max-width:980px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:8px 12px}
+  .topbar{width:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:8px 12px}
   .logo{display:flex;align-items:center;gap:8px;min-width:0}
   .logo h1{font-size:24px;line-height:1;font-style:italic;letter-spacing:-.02em;color:var(--gold);font-weight:900}
   .logo span{display:none}
@@ -33,12 +33,12 @@
   .view-switch button:hover{color:var(--foreground)}
   .view-switch button.active{background:var(--gold);color:#201b28}
 
-  main{width:100%;max-width:980px;margin:0 auto;padding:8px 14px 16px;display:flex;flex-direction:column;gap:10px}
+  main{width:100%;max-width:1180px;margin:0 auto;padding:8px 14px 16px;display:flex;flex-direction:column;gap:10px}
   body.view-mobile .topbar,
   body.view-mobile main{max-width:430px}
   body.view-mobile main{padding-inline:8px}
   body.view-desktop .topbar,
-  body.view-desktop main{max-width:980px}
+  body.view-desktop main{max-width:1180px}
   .history{display:flex;align-items:center;gap:12px;overflow-x:auto;border-radius:8px;padding:8px;font-size:14px;font-weight:700;scrollbar-width:none}
   .history::-webkit-scrollbar{display:none}
   .chip{flex:0 0 auto;padding:0;background:transparent;border:0;font-size:14px;font-weight:800;white-space:nowrap}
@@ -147,7 +147,7 @@
   <div class="history" id="history"></div>
 
   <div class="stage" id="stage">
-    <canvas id="cv" width="960" height="380"></canvas>
+    <canvas id="cv" width="1152" height="456"></canvas>
     <div class="mult" id="mult"></div>
     <div class="status" id="status">LOAD YOUR BARRELS</div>
     <div class="countbar" id="countbar"></div>
