@@ -6,8 +6,8 @@ function downedGhostCamera(gm, now){
   const targetX = W * 0.58;
   const targetY = H * 0.28;
   return {
-    x: clamp((targetX - gm.tip.x) * pan, -W * 0.55, W * 0.24),
-    y: clamp((targetY - gm.tip.y) * pan, 0, H * 0.95)
+    x: (targetX - gm.tip.x) * pan,
+    y: Math.max(0, (targetY - gm.tip.y) * pan)
   };
 }
 

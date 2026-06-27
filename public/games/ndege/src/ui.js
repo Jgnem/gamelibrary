@@ -10,10 +10,11 @@ function renderUI(){
         ? `Bet ${amount} FUN <span class="sub">next flight</span>` : `Bet ${amount} FUN`;
       p.el.info.textContent = '';
     } else if (p.state === 'placed'){
-      b.className = 'action cancel'; b.textContent = 'Cancel';
+      b.className = 'action cancel cancel-placed';
+      b.innerHTML = `Cancel <span class="sub">${fmtBetButtonAmount(p.stake)} FUN</span>`;
       p.el.info.textContent = `${fmt(p.stake)} FUN · ${p.autoShoot ? 'aim ' + p.target.toFixed(2) + 'x' : 'manual'}`;
     } else if (p.state === 'queued'){
-      b.className = 'action cancel';
+      b.className = 'action cancel cancel-queued';
       b.innerHTML = 'Cancel <span class="sub">queued for next flight</span>';
       p.el.info.textContent = `${fmt(p.stake)} FUN queued`;
     } else if (p.state === 'live'){
