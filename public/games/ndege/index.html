@@ -35,7 +35,7 @@
 
   main{width:100%;max-width:1180px;margin:0 auto;padding:8px 14px 16px;display:flex;flex-direction:column;gap:10px}
   body.view-mobile .topbar,
-  body.view-mobile main{max-width:430px}
+  body.view-mobile main{max-width:560px}
   body.view-mobile main{padding-inline:8px}
   body.view-desktop .topbar,
   body.view-desktop main{max-width:1180px}
@@ -48,6 +48,7 @@
   .chip.down{color:var(--success)}
 
   .stage{position:relative;aspect-ratio:960 / 380;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#0f172a;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  body.view-mobile .stage{aspect-ratio:720 / 520}
   canvas{display:block;width:100%;height:100%}
   .mult{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif;font-size:72px;font-weight:900;text-shadow:0 4px 24px rgba(0,0,0,.7);pointer-events:none;transition:color .2s;z-index:2}
   .mult.flying{color:#fff}
@@ -165,6 +166,11 @@
     (() => {
       const key = 'ndege-view-mode';
       const buttons = Array.from(document.querySelectorAll('[data-view]'));
+      const canvas = document.getElementById('cv');
+      const canvasSizes = {
+        desktop: { width: 1152, height: 456 },
+        mobile: { width: 720, height: 520 }
+      };
       const preferMobile = window.matchMedia('(max-width: 760px)').matches;
       const saved = (() => {
         try { return localStorage.getItem(key); }
@@ -174,6 +180,11 @@
 
       function setViewMode(mode){
         const next = mode === 'mobile' ? 'mobile' : 'desktop';
+        const size = canvasSizes[next];
+        if (canvas && size){
+          canvas.width = size.width;
+          canvas.height = size.height;
+        }
         document.body.classList.toggle('view-mobile', next === 'mobile');
         document.body.classList.toggle('view-desktop', next === 'desktop');
         buttons.forEach(button => {
@@ -186,7 +197,13 @@
       }
 
       buttons.forEach(button => {
-        button.addEventListener('click', () => setViewMode(button.dataset.view));
+        button.addEventListener('click', () => {
+          const next = button.dataset.view === 'mobile' ? 'mobile' : 'desktop';
+          if (document.body.classList.contains(`view-${next}`)) return;
+          try { localStorage.setItem(key, next); }
+          catch (error) {}
+          window.location.reload();
+        });
       });
       setViewMode(initial);
     })();
