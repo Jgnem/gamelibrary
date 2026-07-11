@@ -15,6 +15,14 @@ export const games: Game[] = [
     url: '/games/ndege/index.html',
   },
 
+
+  {
+  title: 'The Drunk Farmer',
+  slug: 'drunk-farmer',
+  description: 'A 6×6 cluster-pay slot game with tumbling wins.',
+  thumbnail: '/thumbnails/drunk-farmer.png',
+  url: '/games/drunk-farmer/index.html',
+},
   // ── Add more games below ──────────────────────────────────────────────────
   //
   // {
