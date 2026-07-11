@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>drunk-farmer</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Dark farm-green vignette behind the letterboxed stage. */
+        background: radial-gradient(120vmax at 50% 18%, #33452a 0%, #1b2515 46%, #0c1109 100%) fixed #0c1109;
+        font-family: system-ui, sans-serif;
+        color: #eee;
+      }
+      /* The stage is the full background painting; every game canvas is
+         absolutely positioned over a region of it (see canvas.js). */
+      #stage {
+        flex: 0 0 auto;
+        border-radius: 10px;
+      }
+      #stage.tdf-desktop {
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      }
+      #stage canvas {
+        display: block;
+      }
+      /* Placeholder frame while the mobile background painting is regenerated
+         (the painted wooden frame lived in the old art). */
+      #stage.tdf-mobile .game-grid {
+        border-radius: 6px;
+        box-shadow:
+          0 0 0 5px rgba(150, 103, 44, 1),
+          0 0 0 9px rgba(88, 57, 22, 1),
+          0 12px 34px rgba(0, 0, 0, 0.6);
+      }
+      /* Desktop layout squeezed into a portrait window: the side-standing
+         farmer has no room, hide him. The MOBILE layout positions its own
+         farmer and must keep him visible (scoped by .tdf-desktop). */
+      @media (orientation: portrait) {
+        #stage.tdf-desktop .farmer-actor {
+          opacity: 0;
+        }
+      }
+      /* Event banner (FREE SPINS etc.) — pops in over the board, fades out.
+         Dark plate behind the text: gold-on-gold against haybale/carrot
+         symbols was near-invisible without it. */
+      .event-banner {
+        position: absolute;
+        left: 50%;
+        top: 38%;
+        transform: translate(-50%, -50%) scale(0.5);
+        font-weight: 900;
+        font-size: clamp(34px, 5vw, 64px);
+        color: #ffd75e;
+        text-shadow: 0 4px 0 #7a2b00, 0 0 26px rgba(255, 140, 0, 0.9);
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 30;
+        padding: 12px 30px;
+        border-radius: 999px;
+        background: rgba(22, 32, 12, 0.92);
+        border: 2px solid #ffd75e;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        animation: bannerPop 1.5s ease forwards;
+      }
+      /* Mobile: center the banner over the board's middle — the board spans
+         29–72% of the stage, so 38% landed on symbol row 2. */
+      #stage.tdf-mobile .event-banner {
+        top: 50.5%;
+      }
+      @keyframes bannerPop {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        14% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        26% { transform: translate(-50%, -50%) scale(1); }
+        78% { opacity: 1; }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(1.06); }
+      }
+      /* Small info chip near the farmer (cork sniff: +1 shot tier next spin). */
+      .event-chip {
+        position: absolute;
+        left: 79%;
+        top: 46%;
+        transform: translate(-50%, 8px);
+        background: rgba(22, 32, 12, 0.92);
+        border: 2px solid #ffd75e;
+        color: #ffe9a8;
+        font-weight: 700;
+        font-size: clamp(12px, 1.4vw, 18px);
+        padding: 7px 14px;
+        border-radius: 999px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 30;
+        animation: chipFloat 2s ease forwards;
+      }
+      @keyframes chipFloat {
+        0% { opacity: 0; transform: translate(-50%, 14px); }
+        15% { opacity: 1; transform: translate(-50%, 0); }
+        75% { opacity: 1; }
+        100% { opacity: 0; transform: translate(-50%, -18px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud"></div>
+    <div id="stage"></div>
+    <script type="module" src="/src/main.js"></script>
+    <!-- QA ONLY: run the math model verification on page load (no visual UI). -->
+    <script type="module">
+      import { runVerification } from '/src/math/verify.js';
+      runVerification(2, 20000);
+    </script>
+    <!-- Game boot: load+clean bitmap assets, mount the stage canvases, wire the
+         spin flow. SPIN runs engine.spin and drives the animation pipeline. -->
+    <script type="module">
+      import { loadAssets } from '/src/ui/assets.js';
+      import { initCanvas } from '/src/ui/canvas.js';
+      import { createGrid } from '/src/math/grid.js';
+      import { renderGrid } from '/src/ui/renderer.js';
+      import { animateDropIn } from '/src/ui/dropIn.js';
+      import { animateTumble } from '/src/ui/animator.js';
+      import { pickBottleCell, buildDropInOverrides, animateBottleSpawnFx, initBottleFlyLayer } from '/src/ui/bottleSpawnFx.js';
+      import { initFarmer } from '/src/ui/farmerActor.js';
+      import { shootChicken, drawBuffPlaques } from '/src/ui/chickenShotAnimator.js';
+      import { initHud } from '/src/ui/hud.js';
+      import { playWinCelebration } from '/src/ui/winCelebration.js';
+      import { createGameState, spin } from '/src/game/engine.js';
+      import { METER_MAX, BOTTLE_TYPES, FREE_SPINS } from '/src/math/constants.js';
+
+      // Assets first: symbol tiles, bottles and the background painting are
+      // all bitmap-based now, so nothing renders before they're processed.
+      await loadAssets();
+
+      let balance = 1000;
+      let gameState = createGameState();
+
+      const { canvas, ctx, cellSize, resize } = initCanvas('#stage');
+      const farmer = initFarmer();
+      const bottleFlyLayer = initBottleFlyLayer();
+      const hud = initHud('#hud', {
+        balance,
+        bet: 1,
+        lastWin: 0,
+        onSpin: runSpin,
+        onDemoBottle: (type) => runDemo(type),
+      });
+
+      let lastGrid = createGrid();
+      // Persistent chicken buffs ("hot cells") currently shown on the resting
+      // board. The full-tile ×value plaque is drawn in the BACK layer (behind
+      // the symbols — visible in empty wells, under falling tiles and across
+      // spins).
+      let lastBuffs = [];
+      // While true the meter shows all three bottles lit (the 3rd just landed)
+      // — it drains as the first queued FREE SPIN fires, not silently.
+      const buffUnderlay = (cx) => drawBuffPlaques(cx, lastBuffs, cellSize);
+      const restingBoardOpts = { drawUnderlay: buffUnderlay };
+      renderGrid(ctx, lastGrid, cellSize, [], restingBoardOpts);
+      hud.setFillMeter(gameState.bottle.fill / METER_MAX);
+
+      window.addEventListener('resize', () => {
+        resize();
+        farmer.resize();
+        bottleFlyLayer.resize();
+        if (!hud.spinButton.disabled) renderGrid(ctx, lastGrid, cellSize, [], restingBoardOpts);
+      });
+
+      /** Big center banner (FREE SPINS!) — self-removing DOM overlay. */
+      function showBanner(text, ms = 1500) {
+        const el = document.createElement('div');
+        el.className = 'event-banner';
+        el.textContent = text;
+        document.querySelector('#stage').appendChild(el);
+        setTimeout(() => el.remove(), ms);
+      }
+
+      /** Small chip near the farmer (bottle type + fill amount). Pass the
+       *  farmer's catch point (client coords) so the chip follows him in every
+       *  layout; it is clamped inside the viewport (the old fixed 79% left put
+       *  it half off-screen in the mobile layout). Falls back to the CSS
+       *  default position when no point is given. */
+      function showChip(text, ms = 2000, clientPt = null) {
+        const stage = document.querySelector('#stage');
+        const el = document.createElement('div');
+        el.className = 'event-chip';
+        el.textContent = text;
+        stage.appendChild(el);
+        if (clientPt) {
+          const r = stage.getBoundingClientRect();
+          const margin = 8;
+          const half = el.offsetWidth / 2;
+          const minX = margin + half - r.left;
+          const maxX = window.innerWidth - margin - half - r.left;
+          el.style.left = `${Math.max(minX, Math.min(maxX, clientPt.x - r.left))}px`;
+          el.style.top = `${Math.max(margin - r.top, clientPt.y - r.top - el.offsetHeight)}px`;
+        }
+        setTimeout(() => el.remove(), ms);
+      }
+
+      // Bottle type → chip label ("SMALL BUZZ +5%" etc — the Buzz scale lives
+      // on BOTTLE_TYPES.label). Fills are % of METER_MAX.
+      function bottleChipText(type) {
+        return `${(type.label || type.id).toUpperCase()} +${type.fill}%`;
+      }
+
+      // Buzz tier → the farmer's visible tipsiness (sway, red cheeks, droopy
+      // lids). Makes the meter's effect on his shooting readable at a glance.
+      let farmerBuzzLevel = -1;
+      function syncFarmerBuzz(fill) {
+        const level = fill >= 68 ? 0.65 : fill >= 34 ? 0.35 : 0;
+        if (level !== farmerBuzzLevel) {
+          farmerBuzzLevel = level;
+          farmer.setDrunk(level);
+        }
+      }
+      syncFarmerBuzz(gameState.bottle.fill);
+
+      // Detached fill for the bottle-type demo buttons — visual only, never
+      // touches the real gameState meter.
+      let demoFill = 0;
+
+      async function runBottleDemo(typeId) {
+        const type = BOTTLE_TYPES.find((t) => t.id === typeId) || BOTTLE_TYPES[0];
+        const bottleCell = pickBottleCell(lastGrid);
+        // Every bottle flies to the FARMER — he drinks it, the buzz rises by
+        // the type's fill.
+        await animateBottleSpawnFx(ctx, canvas, lastGrid, cellSize, bottleCell, {
+          type: type.id,
+          meterTarget: farmer.catchScreenPoint(),
+          flyLayer: bottleFlyLayer,
+          drawUnderlay: buffUnderlay,
+        });
+        const drinking = farmer.drinkBottle();
+        showChip(bottleChipText(type), 2000, farmer.chipScreenPoint());
+        demoFill += type.fill;
+        await drinking;
+        if (demoFill >= METER_MAX) {
+          demoFill -= METER_MAX; // overflow carries — like the real meter
+          showBanner(`${FREE_SPINS.count} FREE SPINS!`);
+          await farmer.rackRifle();
+        }
+        hud.setFillMeter(demoFill / METER_MAX);
+        renderGrid(ctx, lastGrid, cellSize, [], restingBoardOpts);
+      }
+
+      async function runDemo(typeId) {
+        if (hud.spinButton.disabled) return;
+        hud.setSpinDisabled(true);
+        try {
+          await runBottleDemo(typeId);
+        } finally {
+          hud.setSpinDisabled(false);
+        }
+      }
+
+      const FREE_SPIN_PAUSE_MS = 650;
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      async function runSpin() {
+        const currentBet = hud.getBet();
+        if (balance < currentBet) return;
+
+        hud.setSpinDisabled(true);
+        try {
+          balance -= currentBet;
+          hud.setBalance(balance);
+          hud.setLastWin(0);
+
+          // The paid spin, then its queued free spins auto-play in sequence
+          // (no bet, farmer locked in the shooting stance).
+          const paidWin = await playOneSpin(currentBet);
+          let roundWin = paidWin;
+          const playedFreeSpins = gameState.freeSpins.remaining > 0;
+          while (gameState.freeSpins.remaining > 0) {
+            await wait(FREE_SPIN_PAUSE_MS);
+            roundWin += await playOneSpin(currentBet);
+          }
+          if (farmerInRampage) {
+            farmer.setRampage(false);
+            farmerInRampage = false;
+            hud.hideEventWin();
+          }
+          hud.setLastWin(roundWin);
+          // Feature summary: the event box showed the running total during the
+          // spree; one FREE SPINS WIN screen closes the whole session.
+          if (playedFreeSpins && roundWin - paidWin > 0) {
+            await playWinCelebration({
+              win: roundWin - paidWin,
+              bet: currentBet,
+              label: 'FREE SPINS WIN',
+              isFreeSpinTotal: true,
+            });
+          }
+        } finally {
+          hud.setSpinDisabled(false);
+        }
+      }
+
+      let farmerInRampage = false;
+
+      /** Play one engine spin (paid or free) with full animation. Returns the
+       *  spin's win in bet-money terms (already added to the balance). */
+      async function playOneSpin(currentBet) {
+        const wasFreeSpin = gameState.freeSpins.remaining > 0;
+        if (wasFreeSpin) {
+          // Free spin fires NOW: the held-full meter drains into the spree and
+          // the farmer locks into the shooting stance for the whole feature.
+          const idx = gameState.freeSpins.total - gameState.freeSpins.remaining + 1;
+          showBanner(`FREE SPIN ${idx}/${gameState.freeSpins.total}`, 1100);
+          if (!farmerInRampage) {
+            await farmer.setRampage(true);
+            farmerInRampage = true;
+          }
+        }
+
+        const { state, result } = spin(gameState);
+        gameState = state;
+
+        const b = result.bottle;
+        const bottleCell = b.spawned ? pickBottleCell(result.grid) : null;
+        // The CLOSED bottle rides the entry rope like any tile: its column
+        // enters pre-shifted (tiles above it up one row, the math top-row
+        // symbol hidden above the edge). The reveal→fly→collapse sequence then
+        // plays fully BEFORE the tumble, ending exactly on result.grid.
+        const dropInOpts = bottleCell
+          ? { cellOverrides: buildDropInOverrides(result.grid, bottleCell) }
+          : {};
+        // The waiting plaques stay visible in the BACK layer while the old
+        // board exits and the new tiles fall in on top of them.
+        dropInOpts.drawUnderlay = buffUnderlay;
+
+        await animateDropIn(ctx, result.grid, cellSize, lastGrid, dropInOpts);
+
+        if (b.spawned) {
+          // Meter fill BEFORE this bottle (post-fill minus the type's amount;
+          // un-wrap the overflow when the meter topped out).
+          // Every bottle flies to the FARMER — the causality reads by itself:
+          // bottle → he drinks → buzz rises by the type's fill.
+          await animateBottleSpawnFx(ctx, canvas, result.grid, cellSize, bottleCell, {
+            type: b.type ? b.type.id : 'beer',
+            meterTarget: farmer.catchScreenPoint(),
+            flyLayer: bottleFlyLayer,
+            drawUnderlay: buffUnderlay,
+          });
+          // Chip + meter fill play WHILE he drinks (glugs → buzz rises) —
+          // the drink no longer blocks the whole event on its own.
+          const drinking = farmer.drinkBottle();
+          if (b.type) showChip(bottleChipText(b.type), 2000, farmer.chipScreenPoint());
+          syncFarmerBuzz(b.fill);
+          await drinking;
+          if (b.meterReset) {
+            // Meter topped — hold the lit row; it drains when the first free
+            // spin fires. The overflow (b.fill) survives into the next cycle.
+            showBanner(`${result.freeSpinsQueued} FREE SPINS!`);
+            await farmer.rackRifle();
+          }
+        }
+        hud.setFillMeter(b.fillFraction);
+        syncFarmerBuzz(b.fill);
+
+        // Chicken shots happen DURING the cascade: a crosshair locks onto the
+        // chicken the moment it lands in a formed cluster, the farmer fires,
+        // the chicken explodes and the full-tile ×value plaque is revealed in
+        // the BACK layer. Carried "hot cell" plaques are shown from the start
+        // (no fresh shot). `revealed` accumulates and is drawn as the tumble
+        // underlay every frame — visible through empty wells and under the
+        // falling refills.
+        const buffed = result.chickenShots ? result.chickenShots.buffed : [];
+        const allBuffs = result.effectiveBuffs || [];
+        const freshKeys = new Set(buffed.map((s) => `${s.row},${s.col}`));
+        const revealed = allBuffs.filter((b) => !freshKeys.has(`${b.row},${b.col}`)).map((b) => ({ ...b }));
+
+        const shotsByStep = new Map();
+        const clusterOfBuff = new Map();
+        result.tumble.steps.forEach((step, i) => {
+          for (const cluster of step.clusters) {
+            for (const cell of cluster.cells) {
+              const k = `${cell.row},${cell.col}`;
+              if (freshKeys.has(k) && !clusterOfBuff.has(k)) {
+                clusterOfBuff.set(k, cluster.cells.map((c) => ({ row: c.row, col: c.col })));
+                const buff = buffed.find((b) => `${b.row},${b.col}` === k);
+                if (!shotsByStep.has(i)) shotsByStep.set(i, []);
+                shotsByStep.get(i).push(buff);
+              }
+            }
+          }
+        });
+
+        // The rifle moves ONLY on real shots — the old "nearly shoots" tease
+        // (raise + lower without firing) read as a shot that did nothing and
+        // was removed. Exploded chickens are added to hiddenWinners so they
+        // never flicker back during the winners fade-out.
+        const hiddenWinners = new Set();
+        const finalGrid = await animateTumble(ctx, result.tumble.steps, cellSize, {
+          hiddenWinnerCells: hiddenWinners,
+          drawUnderlay: (cx, elapsedMs) =>
+            drawBuffPlaques(cx, revealed, cellSize, { pulse: 0.5 + 0.5 * Math.sin((elapsedMs || 0) / 160) }),
+          onStepFlash: async (i, step) => {
+            const toShoot = shotsByStep.get(i);
+            if (!toShoot) return;
+            for (const buff of toShoot) {
+              const highlights = clusterOfBuff.get(`${buff.row},${buff.col}`) || [];
+              await shootChicken(ctx, step.grid, cellSize, buff, { farmer, revealed, highlights, hiddenWinners });
+            }
+          },
+        });
+        lastGrid = finalGrid || result.grid;
+        // Only the buffs a winning cluster covered survive onto the resting
+        // board (use-it-or-lose-it — see engine.settleBuffs).
+        lastBuffs = result.persistentBuffs || [];
+        renderGrid(ctx, lastGrid, cellSize, [], restingBoardOpts);
+
+        const spinWin = result.totalWin * currentBet;
+        balance += spinWin;
+        hud.setBalance(balance);
+        if (result.isFreeSpin && result.freeSpins) {
+          // Running feature total in the event box ("Free Spin 3/5").
+          hud.showEventWin(
+            result.freeSpins.sessionWin * currentBet,
+            `${result.freeSpins.index}/${result.freeSpins.total}`
+          );
+        }
+
+        // Celebration only AFTER the cascade/shots fully settled — never
+        // mid-tumble. Free spins skip the per-spin screen: the event box keeps
+        // the running feature total and runSpin shows one summary at the end.
+        if (!result.isFreeSpin && spinWin > 0) {
+          await playWinCelebration({ win: spinWin, bet: currentBet });
+        }
+
+        console.log('spin', { isFreeSpin: result.isFreeSpin, spinWin, balance });
+        return spinWin;
+      }
+    </script>
+  </body>
+</html>

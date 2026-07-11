@@ -1,0 +1,88 @@
+{
+  "game_id": "drunk_farmer",
+  "version": "0.4.0",
+  "grid": { "cols": 6, "rows": 6 },
+  "cluster_min": 5,
+  "rtp_target": 0.95,
+  "max_win": 5000,
+
+  "_paytable_note": "Uniformly scaled x0.8308 in the mechanics-diet pass (on top of x0.9603 free-spins, x0.4669 fat-tail and x0.6993 rare-but-big trims): funds the guaranteed free-spins chickens and the steeper top shot tier; golden chicken + cross-multiply were cut in the same pass. Measured 94.44% +/- 1.43 total RTP at 1M spins. Still PLACEHOLDER - final shaping later.",
+  "symbols": [
+    { "id": "10",  "freq": 12, "pay": [0,0,0,0,0.0694,0.1168,0.1862,0.2811,0.4199,0.6078,0.8415,1.1683,1.6356,2.3366,3.0376] },
+    { "id": "J",   "freq": 12, "pay": [0,0,0,0,0.0694,0.1168,0.1862,0.2811,0.4199,0.6078,0.8415,1.1683,1.6356,2.3366,3.0376] },
+    { "id": "Q",   "freq": 10, "pay": [0,0,0,0,0.0931,0.1643,0.2574,0.3979,0.6078,0.8872,1.2614,1.7762,2.5703,3.5049,4.6731] },
+    { "id": "K",   "freq": 10, "pay": [0,0,0,0,0.0931,0.1643,0.2574,0.3979,0.6078,0.8872,1.2614,1.7762,2.5703,3.5049,4.6731] },
+    { "id": "A",   "freq": 8,  "pay": [0,0,0,0,0.1406,0.2336,0.3742,0.5605,0.8415,1.2614,1.7762,2.5703,3.5049,4.9069,6.5425] },
+    { "id": "hay", "freq": 7,  "pay": [0,0,0,0,0.2811,0.4673,0.7484,1.1683,1.7762,2.5703,3.7386,5.3741,7.4771,10.281,13.0849] },
+    { "id": "cas", "freq": 6,  "pay": [0,0,0,0,0.4673,0.7941,1.2614,1.9624,3.0376,4.4396,6.3088,9.1127,12.6176,17.5245,22.4313] },
+    { "id": "pit", "freq": 5,  "pay": [0,0,0,0,0.8415,1.402,2.2435,3.5049,5.3741,7.9443,11.2156,16.1225,22.4313,31.3104,40.1894] },
+    { "id": "dog", "freq": 4,  "pay": [0,0,0,0,1.402,2.3366,3.7386,5.8415,8.879,13.0849,18.6927,26.8708,37.3855,52.3396,67.2937] },
+    { "id": "wld", "freq": 3,  "pay": null, "_note": "Wild = CHICKEN in the base game. A working wild shot or not (substitutes, helps form clusters); can be shot when in a winning cluster (see chicken_shot)." }
+  ],
+
+  "cascade": {
+    "_note": "Tumble/avalanche. Winning clusters are removed, symbols fall, new ones fill from above; repeat. Base spins cap at max_base_steps; each step's cluster wins are multiplied by step_multipliers[level-1] (x1 early keeps common outcomes and hit rate untouched; the tail is where the money moved). PLACEHOLDER - TO BE BALANCED.",
+    "max_base_steps": 7,
+    "step_multipliers": [1, 1, 1, 2, 2, 3, 4]
+  },
+
+  "sticky_wilds": {
+    "_note": "A winning wild stays pinned for the rest of the paid spin. Capped at 3 concurrent.",
+    "max_concurrent": 3
+  },
+
+  "temporary_wilds": {
+    "_note": "Later cascade steps may add one temporary wild before the win-check; never becomes sticky, never placed on an existing/sticky wild, gone after use.",
+    "chance_by_step": { "1": 0, "2": 0.3, "3": 0.6, "4": 1 }
+  },
+
+  "chicken_shot": {
+    "_note": "BASE GAME shot mechanic. A chicken (wild) is shot only when it is part of a WINNING CLUSTER: one shot_chance roll per clustered chicken; tier = last entry with min_fill <= meter fill entering the spin. A SHOT chicken buffs the WHOLE cluster (cluster win * buff value; several shot cells in one cluster SUM). A chicken not in a winning cluster, or in one but unshot, is a normal wild with no buff. ALL PLACEHOLDER - TO BE BALANCED.",
+    "fill_tiers": [
+      { "min_fill": 0, "shot_chance": 0.025 },
+      { "min_fill": 34, "shot_chance": 0.08 },
+      { "min_fill": 68, "shot_chance": 0.3 }
+    ],
+    "_tier_note": "TANGIBLE METER: the top tier is deliberately steep (30%) - a 2.5% vs 12.5% spread was statistically invisible over a session. A full-ish meter must be FELT.",
+    "_buff_note": "RARE-BUT-BIG: shots are uncommon (~1 in 30 spins), so each is an event - big values, paytable trimmed to pay for them.",
+    "buff_values": [
+      { "value": 3, "weight": 70 },
+      { "value": 5, "weight": 25 },
+      { "value": 10, "weight": 5 }
+    ],
+    "_golden_note": "GOLDEN CHICKEN was CUT in the mechanics-diet pass: rare x rare (~1 in 10k+ spins) with a modest payoff - dream-budget spent without buying a dream. Its RTP went back into the base paytable.",
+    "free_spins": {
+      "_note": "Rampage-freespins: when the meter tops out, the NEXT `count` spins are FREE - no bet, the board is topped up to `guaranteed_chickens` chickens (the climax must have targets), and every clustered chicken is shot (shot_chance 1.0). Free-spin buffs do NOT persist as badges (one payoff each). The meter is frozen during free spins. Replaces the old single-spin rampage AND the cork sniff.",
+      "count": 5,
+      "shot_chance": 1,
+      "guaranteed_chickens": 3,
+      "buffs_persist": false,
+      "meter_frozen": true
+    }
+  },
+
+  "persistent_buff": {
+    "_note": "PERSIST-UNTIL-USED. A shot chicken's buff multiplies its birth cluster, then STAYS on its CELL (the cell holds a normal symbol next spin) as a waiting xN badge - however many spins it takes - until a winning cluster covers the cell again: that cluster is multiplied and the buff is CONSUMED. One buff = exactly two payoffs (enforced in scoring: a buffed cell multiplies only the FIRST cluster covering it per spin), so cost is bounded and the board cannot saturate. A fresh shot on a cell already holding a waiting buff SUMS, capped at max_value. PLACEHOLDER - TO BE BALANCED.",
+    "max_value": 25,
+    "_ferment_note": "FERMENTING: a waiting buff that survives ferment_interval spins grows by ferment_amount (again each interval), capped at max_value.",
+    "ferment_interval": 10,
+    "ferment_amount": 1,
+    "_cross_note": "CROSS-MULTIPLY was CUT in the mechanics-diet pass: it fired too rarely to be perceived and its budget went back into the base paytable."
+  },
+
+  "bottle": {
+    "BASE_SPAWN_CHANCE": 0.08,
+    "SPAWN_RISE_PER_DRY_SPIN": 0.02,
+    "METER_MAX": 100,
+    "BOTTLE_TYPES": [
+      { "id": "beer", "label": "Small Buzz", "fill": 5, "weight": 58 },
+      { "id": "wine", "label": "Big Buzz", "fill": 12, "weight": 29 },
+      { "id": "moonshine", "label": "Mega Buzz", "fill": 25, "weight": 10 },
+      { "id": "jug", "label": "Ultra Buzz", "fill": 50, "weight": 2.5 },
+      { "id": "barrel", "label": "Full Buzz", "fill": 100, "weight": 0.5 }
+    ],
+    "_note": "EVERY bottle contains alcohol - no empty bottles. A spawned bottle draws its type from BOTTLE_TYPES (weighted) and adds that type's `fill` to the meter; the meter's fill sets the chicken-shot tier. Topping METER_MAX queues FREE SPINS (see chicken_shot.free_spins) and the OVERFLOW CARRIES OVER (fill -= METER_MAX). FAT TAIL: the jug (half the meter) and the barrel (the WHOLE meter - instant trigger, theoretically on spin 1). LOW PITY: higher base chance + flatter dry-spin ramp keeps the same ~6.4-spin average gap (meter cycle ~60 paid spins) but with real hot streaks and dry spells. PLACEHOLDER fills/weights - TO BE BALANCED."
+  },
+
+  "_drunk_mode_note": "DRUNK MODE was fully REMOVED in the mechanics-diet pass (constants, math module, animator and spec block deleted). Recover from git history if it ever returns."
+}
